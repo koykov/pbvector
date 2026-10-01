@@ -29,7 +29,7 @@ func notFound(n *vector.Node) bool {
 	return n == nil || n.Type() == vector.TypeNull || n.Type() == vector.TypeUnknown
 }
 
-func (vec *Vector) decodeInt(n *vector.Node) (int64, error) {
+func DecodeInt(n *vector.Node) (int64, error) {
 	if notFound(n) {
 		return 0, vector.ErrNotFound
 	}
@@ -58,7 +58,7 @@ func (vec *Vector) decodeInt(n *vector.Node) (int64, error) {
 	return 0, ErrIncompatibleWireType
 }
 
-func (vec *Vector) decodeUint(n *vector.Node) (uint64, error) {
+func DecodeUint(n *vector.Node) (uint64, error) {
 	if notFound(n) {
 		return 0, vector.ErrNotFound
 	}
@@ -87,7 +87,7 @@ func (vec *Vector) decodeUint(n *vector.Node) (uint64, error) {
 	return 0, ErrIncompatibleWireType
 }
 
-func (vec *Vector) decodeFloat(n *vector.Node) (float64, error) {
+func DecodeFloat(n *vector.Node) (float64, error) {
 	if notFound(n) {
 		return 0, vector.ErrNotFound
 	}
@@ -116,7 +116,7 @@ func (vec *Vector) decodeFloat(n *vector.Node) (float64, error) {
 	return 0, ErrIncompatibleWireType
 }
 
-func (vec *Vector) decodeBool(n *vector.Node) bool {
+func DecodeBool(n *vector.Node) bool {
 	if notFound(n) || n.Type() != vector.TypeNumber {
 		return false
 	}
@@ -128,49 +128,49 @@ func (vec *Vector) decodeBool(n *vector.Node) bool {
 }
 
 func (vec *Vector) GetInt(keys ...string) (int64, error) {
-	return vec.decodeInt(vec.Vector.Get(keys...))
+	return DecodeInt(vec.Vector.Get(keys...))
 }
 
 func (vec *Vector) GetUint(keys ...string) (uint64, error) {
-	return vec.decodeUint(vec.Vector.Get(keys...))
+	return DecodeUint(vec.Vector.Get(keys...))
 }
 
 func (vec *Vector) GetFloat(keys ...string) (float64, error) {
-	return vec.decodeFloat(vec.Vector.Get(keys...))
+	return DecodeFloat(vec.Vector.Get(keys...))
 }
 
 func (vec *Vector) GetBool(keys ...string) bool {
-	return vec.decodeBool(vec.Vector.Get(keys...))
+	return DecodeBool(vec.Vector.Get(keys...))
 }
 
 func (vec *Vector) GetIntPS(path, separator string) (int64, error) {
-	return vec.decodeInt(vec.Vector.GetPS(path, separator))
+	return DecodeInt(vec.Vector.GetPS(path, separator))
 }
 
 func (vec *Vector) GetUintPS(path, separator string) (uint64, error) {
-	return vec.decodeUint(vec.Vector.GetPS(path, separator))
+	return DecodeUint(vec.Vector.GetPS(path, separator))
 }
 
 func (vec *Vector) GetFloatPS(path, separator string) (float64, error) {
-	return vec.decodeFloat(vec.Vector.GetPS(path, separator))
+	return DecodeFloat(vec.Vector.GetPS(path, separator))
 }
 
 func (vec *Vector) GetBoolPS(path, separator string) bool {
-	return vec.decodeBool(vec.Vector.GetPS(path, separator))
+	return DecodeBool(vec.Vector.GetPS(path, separator))
 }
 
 func (vec *Vector) DotInt(path string) (int64, error) {
-	return vec.decodeInt(vec.Vector.Dot(path))
+	return DecodeInt(vec.Vector.Dot(path))
 }
 
 func (vec *Vector) DotUint(path string) (uint64, error) {
-	return vec.decodeUint(vec.Vector.Dot(path))
+	return DecodeUint(vec.Vector.Dot(path))
 }
 
 func (vec *Vector) DotFloat(path string) (float64, error) {
-	return vec.decodeFloat(vec.Vector.Dot(path))
+	return DecodeFloat(vec.Vector.Dot(path))
 }
 
 func (vec *Vector) DotBool(path string) bool {
-	return vec.decodeBool(vec.Vector.Dot(path))
+	return DecodeBool(vec.Vector.Dot(path))
 }
