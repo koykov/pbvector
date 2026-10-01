@@ -1,0 +1,19 @@
+module github.com/koykov/pbvector
+
+go 1.24
+
+require (
+	github.com/koykov/byteconv v1.0.1
+	github.com/koykov/vector v1.3.0
+)
+
+require (
+	github.com/koykov/bitset v1.0.0 // indirect
+	github.com/koykov/bytealg v1.0.7 // indirect
+	github.com/koykov/byteseq v1.0.2 // indirect
+	github.com/koykov/entry v1.0.2 // indirect
+	github.com/koykov/indirect v1.0.1 // indirect
+	github.com/koykov/simd v0.0.13 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	google.golang.org/protobuf v1.36.11
+)
