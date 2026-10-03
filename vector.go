@@ -39,6 +39,7 @@ type Vector struct {
 func NewVector() *Vector {
 	vec := &Vector{maxDepth: recursionLimit}
 	vec.SetBit(vector.FlagInit, true)
+	vec.SetCodec(Codec{})
 	return vec
 }
 
