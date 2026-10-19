@@ -1,6 +1,11 @@
 package pbvector
 
-import "github.com/koykov/vector"
+import (
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/koykov/vector"
+)
 
 func (vec *Vector) parse(src []byte, copy bool) error {
 	if !vec.CheckBit(vector.FlagInit) {
@@ -91,6 +96,14 @@ func (vec *Vector) buildValue(parentIdx, childDepth int, srcp uintptr, src []byt
 			n.SetLimit(off)
 			return nil
 		}
+		if checktext(src[f.off : f.off+f.length]) {
+			n, _ := vec.AcquireNodeWithType(childDepth, vector.TypeString)
+			vec.setKey(n, f.num)
+			n.Value().InitRaw(srcp, f.off, f.length)
+			n.Value().SetBit(pbWireLen, true)
+			vec.NodeAt(parentIdx).SetLimit(vec.Index.Len(childDepth))
+			return nil
+		}
 		if _, err := scanMessage(src, f.off, f.off+f.length); err == nil {
 			n, idx := vec.AcquireNodeWithType(childDepth, vector.TypeObject)
 			vec.setKey(n, f.num)
@@ -112,4 +125,18 @@ func (vec *Vector) buildValue(parentIdx, childDepth int, srcp uintptr, src []byt
 func (vec *Vector) setKey(n *vector.Node, num int) {
 	kb := vec.putKey(num)
 	n.Key().Init(kb, 0, len(kb))
+}
+
+func checktext(b []byte) bool {
+	if len(b) == 0 || !utf8.Valid(b) {
+		return false
+	}
+	for len(b) > 0 {
+		r, sz := utf8.DecodeRune(b)
+		if !unicode.IsPrint(r) {
+			return false
+		}
+		b = b[sz:]
+	}
+	return true
 }
