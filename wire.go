@@ -30,11 +30,10 @@ type field struct {
 	length int
 }
 
-func scanMessage(src []byte, s, e int) ([]field, error) {
+func scanMessage(dst []field, src []byte, s, e int) ([]field, error) {
 	if s < 0 || e > len(src) || s > e {
 		return nil, ErrTruncated
 	}
-	var fields []field
 	for s < e {
 		tag, n, err := decodeVarintErr(src[s:e])
 		if err != nil {
@@ -80,7 +79,7 @@ func scanMessage(src []byte, s, e int) ([]field, error) {
 		default:
 			return nil, ErrUnexpectedWireType
 		}
-		fields = append(fields, field{num: num, wire: wire, off: off, length: length})
+		dst = append(dst, field{num: num, wire: wire, off: off, length: length})
 	}
-	return fields, nil
+	return dst, nil
 }

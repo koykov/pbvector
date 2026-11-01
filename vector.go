@@ -33,6 +33,8 @@ type Vector struct {
 	keyChunks [][]byte
 	keyIdx    int
 	keyOff    int
+
+	fbuf []field
 }
 
 //go:noinline
@@ -71,5 +73,6 @@ func (vec *Vector) ParseReader(r io.Reader) error {
 func (vec *Vector) Reset() {
 	vec.Vector.Reset()
 	vec.keyIdx, vec.keyOff = 0, 0
+	vec.fbuf = vec.fbuf[:0]
 	vec.SetBit(vector.FlagInit, true)
 }

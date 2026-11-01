@@ -40,7 +40,7 @@ func TestWire(t *testing.T) {
 			0x11, 1, 0, 0, 0, 0, 0, 0, 0,
 			0x1A, 0x02, 'h', 'i',
 		}
-		fields, err := scanMessage(src, 0, len(src))
+		fields, err := scanMessage(nil, src, 0, len(src))
 		if err != nil {
 			t.Fatalf("expected valid message, got %v", err)
 		}
@@ -57,13 +57,13 @@ func TestWire(t *testing.T) {
 			t.Fatalf("field2 = %+v", fields[2])
 		}
 
-		if _, err := scanMessage([]byte{0x08, 0x80}, 0, 2); !errors.Is(err, ErrTruncated) {
+		if _, err := scanMessage(nil, []byte{0x08, 0x80}, 0, 2); !errors.Is(err, ErrTruncated) {
 			t.Fatalf("truncated message: got %v, want ErrTruncated", err)
 		}
-		if _, err := scanMessage([]byte{0x1A, 0x05, 'h', 'i'}, 0, 4); !errors.Is(err, ErrTruncated) {
+		if _, err := scanMessage(nil, []byte{0x1A, 0x05, 'h', 'i'}, 0, 4); !errors.Is(err, ErrTruncated) {
 			t.Fatalf("length beyond end: got %v, want ErrTruncated", err)
 		}
-		if _, err := scanMessage([]byte{0x00}, 0, 1); !errors.Is(err, ErrUnexpectedWireType) {
+		if _, err := scanMessage(nil, []byte{0x00}, 0, 1); !errors.Is(err, ErrUnexpectedWireType) {
 			t.Fatalf("field number 0: got %v, want ErrUnexpectedWireType", err)
 		}
 	})

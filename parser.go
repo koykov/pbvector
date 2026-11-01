@@ -28,7 +28,8 @@ func (vec *Vector) buildMessage(depth, parentIdx int, srcp uintptr, src []byte, 
 	if rec > vec.maxDepth {
 		return ErrRecursionLimit
 	}
-	fields, err := scanMessage(src, s, e)
+	var err error
+	vec.fbuf, err = scanMessage(vec.fbuf[:0], src, s, e)
 	if err != nil {
 		vec.SetErrOffset(s)
 		return err
@@ -36,9 +37,9 @@ func (vec *Vector) buildMessage(depth, parentIdx int, srcp uintptr, src []byte, 
 	childrenDepth := depth + 1
 	vec.NodeAt(parentIdx).SetOffset(vec.Index.Len(childrenDepth))
 
-	order := make([]int, 0, len(fields))
-	groups := make(map[int][]field, len(fields))
-	for _, f := range fields {
+	order := make([]int, 0, len(vec.fbuf))
+	groups := make(map[int][]field, len(vec.fbuf))
+	for _, f := range vec.fbuf {
 		if _, seen := groups[f.num]; !seen {
 			order = append(order, f.num)
 		}
@@ -104,7 +105,8 @@ func (vec *Vector) buildValue(parentIdx, childDepth int, srcp uintptr, src []byt
 			vec.NodeAt(parentIdx).SetLimit(vec.Index.Len(childDepth))
 			return nil
 		}
-		if _, err := scanMessage(src, f.off, f.off+f.length); err == nil {
+		var err error
+		if vec.fbuf, err = scanMessage(vec.fbuf[:0], src, f.off, f.off+f.length); err == nil {
 			n, idx := vec.AcquireNodeWithType(childDepth, vector.TypeObject)
 			vec.setKey(n, f.num)
 			vec.NodeAt(parentIdx).SetLimit(vec.Index.Len(childDepth))
