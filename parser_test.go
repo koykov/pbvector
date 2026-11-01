@@ -104,16 +104,16 @@ func BenchmarkParse(b *testing.B) {
 		inner = protowire.AppendTag(inner, 2, protowire.BytesType)
 		inner = protowire.AppendString(inner, "some string value")
 
-		var b []byte
-		b = protowire.AppendTag(b, 1, protowire.VarintType)
-		b = protowire.AppendVarint(b, 42)
-		b = protowire.AppendTag(b, 2, protowire.BytesType)
-		b = protowire.AppendBytes(b, inner)
+		var buf []byte
+		buf = protowire.AppendTag(buf, 1, protowire.VarintType)
+		buf = protowire.AppendVarint(buf, 42)
+		buf = protowire.AppendTag(buf, 2, protowire.BytesType)
+		buf = protowire.AppendBytes(buf, inner)
 		for i := 0; i < 10; i++ {
-			b = protowire.AppendTag(b, 3, protowire.VarintType)
-			b = protowire.AppendVarint(b, uint64(i))
+			buf = protowire.AppendTag(buf, 3, protowire.VarintType)
+			buf = protowire.AppendVarint(buf, uint64(i))
 		}
-		return b
+		return buf
 	}
 
 	src := makesrc()
