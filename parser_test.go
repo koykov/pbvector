@@ -95,34 +95,3 @@ func TestParser(t *testing.T) {
 		}
 	})
 }
-
-func BenchmarkParse(b *testing.B) {
-	makesrc := func() []byte {
-		var inner []byte
-		inner = protowire.AppendTag(inner, 1, protowire.VarintType)
-		inner = protowire.AppendVarint(inner, 12345)
-		inner = protowire.AppendTag(inner, 2, protowire.BytesType)
-		inner = protowire.AppendString(inner, "some string value")
-
-		var buf []byte
-		buf = protowire.AppendTag(buf, 1, protowire.VarintType)
-		buf = protowire.AppendVarint(buf, 42)
-		buf = protowire.AppendTag(buf, 2, protowire.BytesType)
-		buf = protowire.AppendBytes(buf, inner)
-		for i := 0; i < 10; i++ {
-			buf = protowire.AppendTag(buf, 3, protowire.VarintType)
-			buf = protowire.AppendVarint(buf, uint64(i))
-		}
-		return buf
-	}
-
-	src := makesrc()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		vec := Acquire()
-		if err := vec.Parse(src); err != nil {
-			b.Fatal(err)
-		}
-		Release(vec)
-	}
-}
