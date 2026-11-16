@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"unsafe"
 
 	"github.com/koykov/byteconv"
 	"github.com/koykov/vector"
@@ -33,8 +34,21 @@ type Vector struct {
 	keyChunks [][]byte
 	keyIdx    int
 	keyOff    int
+	dbuf      []buffer
+}
 
-	fbuf []field
+func (vec *Vector) acqbuf(depth int) *buffer {
+	for len(vec.dbuf) <= depth {
+		vec.dbuf = append(vec.dbuf, buffer{})
+	}
+	return &vec.dbuf[depth]
+}
+
+func (vec *Vector) relbuf(depth int, buf *buffer) {
+	l, r := unsafe.Pointer(&vec.dbuf[depth]), unsafe.Pointer(buf)
+	if l != r {
+		vec.dbuf[depth] = *buf
+	}
 }
 
 //go:noinline
@@ -73,6 +87,5 @@ func (vec *Vector) ParseReader(r io.Reader) error {
 func (vec *Vector) Reset() {
 	vec.Vector.Reset()
 	vec.keyIdx, vec.keyOff = 0, 0
-	vec.fbuf = vec.fbuf[:0]
 	vec.SetBit(vector.FlagInit, true)
 }

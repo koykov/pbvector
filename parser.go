@@ -28,28 +28,67 @@ func (vec *Vector) buildMessage(depth, parentIdx int, srcp uintptr, src []byte, 
 	if rec > vec.maxDepth {
 		return ErrRecursionLimit
 	}
+	buf := vec.acqbuf(depth)
 	var err error
-	vec.fbuf, err = scanMessage(vec.fbuf[:0], src, s, e)
+	buf.fields, err = scanMessage(buf.fields[:0], src, s, e)
 	if err != nil {
 		vec.SetErrOffset(s)
+		vec.relbuf(depth, buf)
 		return err
 	}
+
+	if buf.set == nil {
+		buf.set = make(map[int]int, len(buf.fields))
+	} else {
+		clear(buf.set)
+	}
+	buf.order = buf.order[:0]
+	buf.counts = buf.counts[:0]
+	for _, f := range buf.fields {
+		if i, ok := buf.set[f.num]; ok {
+			buf.counts[i]++
+		} else {
+			buf.set[f.num] = len(buf.order)
+			buf.order = append(buf.order, f.num)
+			buf.counts = append(buf.counts, 1)
+		}
+	}
+
+	n := len(buf.order)
+	if cap(buf.starts) < n+1 {
+		buf.starts = make([]int, n+1)
+	} else {
+		buf.starts = buf.starts[:n+1]
+	}
+	buf.starts[0] = 0
+	for i := 0; i < n; i++ {
+		buf.starts[i+1] = buf.starts[i] + buf.counts[i]
+	}
+	if cap(buf.cursor) < n {
+		buf.cursor = make([]int, n)
+	} else {
+		buf.cursor = buf.cursor[:n]
+	}
+	copy(buf.cursor, buf.starts[:n])
+	if cap(buf.gfields) < len(buf.fields) {
+		buf.gfields = make([]field, len(buf.fields))
+	} else {
+		buf.gfields = buf.gfields[:len(buf.fields)]
+	}
+	for _, f := range buf.fields {
+		i := buf.set[f.num]
+		buf.gfields[buf.cursor[i]] = f
+		buf.cursor[i]++
+	}
+
 	childrenDepth := depth + 1
 	vec.NodeAt(parentIdx).SetOffset(vec.Index.Len(childrenDepth))
 
-	order := make([]int, 0, len(vec.fbuf))
-	groups := make(map[int][]field, len(vec.fbuf))
-	for _, f := range vec.fbuf {
-		if _, seen := groups[f.num]; !seen {
-			order = append(order, f.num)
-		}
-		groups[f.num] = append(groups[f.num], f)
-	}
-
-	for _, num := range order {
-		occs := groups[num]
-		if len(occs) == 1 {
-			if err := vec.buildValue(parentIdx, childrenDepth, srcp, src, occs[0], rec); err != nil {
+	for i, num := range buf.order {
+		lo, hi := buf.starts[i], buf.starts[i+1]
+		if hi-lo == 1 {
+			if err := vec.buildValue(parentIdx, childrenDepth, srcp, src, buf.gfields[lo], rec); err != nil {
+				vec.relbuf(depth, buf)
 				return err
 			}
 			continue
@@ -58,13 +97,15 @@ func (vec *Vector) buildMessage(depth, parentIdx int, srcp uintptr, src []byte, 
 		vec.setKey(arr, num)
 		vec.NodeAt(parentIdx).SetLimit(vec.Index.Len(childrenDepth))
 		vec.NodeAt(arrIdx).SetOffset(vec.Index.Len(childrenDepth + 1))
-		for _, occ := range occs {
-			if err := vec.buildValue(arrIdx, childrenDepth+1, srcp, src, occ, rec); err != nil {
+		for j := lo; j < hi; j++ {
+			if err := vec.buildValue(arrIdx, childrenDepth+1, srcp, src, buf.gfields[j], rec); err != nil {
+				vec.relbuf(depth, buf)
 				return err
 			}
 		}
 		vec.NodeAt(arrIdx).SetLimit(vec.Index.Len(childrenDepth + 1))
 	}
+	vec.relbuf(depth, buf)
 	return nil
 }
 
@@ -106,7 +147,10 @@ func (vec *Vector) buildValue(parentIdx, childDepth int, srcp uintptr, src []byt
 			return nil
 		}
 		var err error
-		if vec.fbuf, err = scanMessage(vec.fbuf[:0], src, f.off, f.off+f.length); err == nil {
+		cbuf := vec.acqbuf(childDepth)
+		cbuf.fields, err = scanMessage(cbuf.fields[:0], src, f.off, f.off+f.length)
+		vec.relbuf(childDepth, cbuf)
+		if err == nil {
 			n, idx := vec.AcquireNodeWithType(childDepth, vector.TypeObject)
 			vec.setKey(n, f.num)
 			vec.NodeAt(parentIdx).SetLimit(vec.Index.Len(childDepth))
